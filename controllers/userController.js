@@ -1,0 +1,33 @@
+import User from "../models/user.js";
+
+// Get current user's profile
+export const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select("-password");
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch profile", error: err.message });
+  }
+};
+
+// Update current user's profile
+export const updateProfile = async (req, res) => {
+  try {
+    const updates = req.body;
+
+    // Prevent role or email change
+    delete updates.role;
+    delete updates.email;
+
+    // Only allow updating allowed fields
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update profile", error: err.message });
+  }
+};
