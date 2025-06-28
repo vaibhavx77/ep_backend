@@ -16,8 +16,8 @@ router.post("/verify-otp", verifyOtp);
 // Admin creates EP member accounts
 router.post(
   "/create-ep-member",
-  authenticate,
-  authorizeRoles("Admin"),
+  // authenticate,
+  // authorizeRoles("Admin"),
   createEpMember
 );
 
