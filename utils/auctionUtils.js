@@ -41,7 +41,7 @@ export const getAuctionsForSupplier = async (identifier) => {
       query = { invitedSuppliers: identifier };
     }
     
-    return await Auction.find(query).populate("lots invitedSuppliers createdBy");
+    return await Auction.find(query).populate("lots createdBy");
   } catch (error) {
     console.error(`Error getting auctions for supplier: ${error.message}`);
     throw error;
