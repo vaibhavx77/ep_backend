@@ -6,7 +6,17 @@ const auctionSchema = new mongoose.Schema({
   category: String,
   lots: [{ type: mongoose.Schema.Types.ObjectId, ref: "Lot" }],
   documents: [{ type: String }], // file paths or URLs
-  invitedSuppliers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+  invitedSuppliers: [{
+    type: mongoose.Schema.Types.Mixed,
+    validate: {
+      validator: function(v) {
+        // Allow ObjectId (existing users) or email string (non-existing suppliers)
+        return mongoose.Types.ObjectId.isValid(v) || 
+               (typeof v === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v));
+      },
+      message: 'Invited supplier must be either a valid ObjectId or email address'
+    }
+  }],
   reservePrice: { type: Number, required: true },
   currency: { type: String, required: true },
   startTime: { type: Date, required: true },

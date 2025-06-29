@@ -1,8 +1,10 @@
 import User from "../models/user.js";
+import Auction from "../models/auction.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { sendOTP } from "../utils/mailer.js";
 import Invitation from "../models/invitation.js";
+import { convertEmailToUserIdInAuctions } from "../utils/auctionUtils.js";
 
 // Register a new user (EP member or Supplier)
 export const register = async (req, res) => {
@@ -62,7 +64,14 @@ export const register = async (req, res) => {
     invitation.usedAt = new Date();
     await invitation.save();
 
-    res.status(201).json({ message: "Registration successful" });
+    // Update auctions that have this email in invitedSuppliers
+    // Convert email to user ID in all relevant auctions
+    const auctionsUpdated = await convertEmailToUserIdInAuctions(email, user._id);
+
+    res.status(201).json({ 
+      message: "Registration successful",
+      auctionsUpdated
+    });
   } catch (err) {
     res.status(500).json({ message: "Registration failed", error: err.message });
   }
@@ -119,7 +128,7 @@ export const verifyOtp = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    res.json({ token, user: { id: user._id, name: user.name, role: user.role } });
+    res.json({ token, user: { id: user._id, name: user.name, role: user.role, email: user.email } });
   } catch (err) {
     res.status(500).json({ message: "OTP verification failed", error: err.message });
   }
