@@ -53,35 +53,47 @@ await agenda.schedule(new Date(startTime), 'start auction', { auctionId: auction
 
 // Schedule end job
 await agenda.schedule(new Date(endTime), 'end auction', { auctionId: auction._id });
-
+console.log(invitedSuppliers, "iiiiiiiiiiiiiiiiiii")
+console.log(auction, auction._id, "vvvvvvvvvvvvvvvvvvvvvv11111111")
+const normalizedEmails = invitedSuppliers.map(email => email.toLowerCase());
     // Validate invited suppliers
     if (invitedSuppliers && invitedSuppliers.length > 0) {
       const validSuppliers = await User.find({
-        _id: { $in: invitedSuppliers },
+        email: { $in: normalizedEmails },
         role: "Supplier"
       }).select("_id");
+
       if (validSuppliers.length !== invitedSuppliers.length) {
         return res.status(400).json({ message: "One or more invited users are not valid suppliers." });
       }
     }
-
+let lotIds = [];
     // Handle lots (if any)
     if (lots && lots.length > 0) {
       for (let i = 0; i < lots.length; i++) {
         const lot = lots[i];
-        const lotDocs = req.files?.[`lotDocs${i}`]?.map(file => file.path) || [];
+        console.log(lot.dimensions, "vvvvvvvvvvvvvvvvvvvvvv333333333")
+
+        // const lotDocs = req.files?.[`lotDocs${i}`]?.map(file => file.path) || [];
         const newLot = new Lot({
           auction: auction._id,
-          name: lot.name,
-          description: lot.description,
-          specifications: lot.specifications,
-          documents: lotDocs,
-          reservePrice: lot.reservePrice,
-          currency: lot.currency,
+          lotId: lot.lotId,
+          name: lot.productName,
+          hsCode: lot.hsCode,
+          material: lot.material,
+          prevCost: lot.prevCost,
+          dimensions: lot.dimensions
+          
+          // description: lot.description,
+          // specifications: lot.specifications,
+          // documents: lotDocs,
+          // reservePrice: lot.reservePrice,
+          // currency: lot.currency,
         });
         await newLot.save();
-        auction.lots.push(newLot._id);
+       lotIds.push(newLot._id);
       }
+        auction.lots = lotIds;
       await auction.save();
     }
 
