@@ -8,4 +8,4 @@ router.post("/ask", authenticate, askQuestion);
 router.post("/answer/:qaId", authenticate, answerQuestion);
 router.get("/:auctionId", authenticate, getAuctionQA);
 
-export default router;
+export default router; 
