@@ -60,7 +60,7 @@ const normalizedEmails = invitedSuppliers.map(email => email.toLowerCase());
     if (invitedSuppliers && invitedSuppliers.length > 0) {
       const validSuppliers = await User.find({
         email: { $in: normalizedEmails },
-        role: "Supplier"
+        // role: "Supplier"
       }).select("_id");
 
       if (validSuppliers.length !== invitedSuppliers.length) {
