@@ -62,7 +62,6 @@ const normalizedEmails = invitedSuppliers.map(email => email.toLowerCase());
         email: { $in: normalizedEmails },
         // role: "Supplier"
       }).select("_id");
-
       if (validSuppliers.length !== invitedSuppliers.length) {
         return res.status(400).json({ message: "One or more invited users are not valid suppliers." });
       }
