@@ -19,6 +19,15 @@ export const sendOTP = async (to, otp) => {
   });
 };
 
+export const inviteAuction = async (to, auction) => {
+  await transporter.sendMail({
+    from: process.env.EMAIL_USER,
+    to,
+    subject: "Auction Invite",
+    text: `Your are invited to an auction ${auction?.title}`,
+  });
+};
+
 export const sendInvitationEmail = async (to, registrationLink, auctionTitle = "an auction") => {
   await transporter.sendMail({
     from: process.env.EMAIL_USER,

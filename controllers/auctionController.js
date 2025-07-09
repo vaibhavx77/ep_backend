@@ -3,6 +3,7 @@ import Lot from "../models/lot.js";
 import User from "../models/user.js";
 import Bid from "../models/bid.js";
 import { getAgendaInstance } from '../agenda.js'
+import { inviteAuction } from "../utils/mailer.js";
 
 // Create Auction (with optional lots)
 export const createAuction = async (req, res) => {
@@ -62,9 +63,9 @@ const normalizedEmails = invitedSuppliers.map(email => email.toLowerCase());
         email: { $in: normalizedEmails },
         // role: "Supplier"
       }).select("_id");
-      if (validSuppliers.length !== invitedSuppliers.length) {
-        return res.status(400).json({ message: "One or more invited users are not valid suppliers." });
-      }
+      // if (validSuppliers.length !== invitedSuppliers.length) {
+      //   return res.status(400).json({ message: "One or more invited users are not valid suppliers." });
+      // }
     }
 let lotIds = [];
     // Handle lots (if any)
@@ -95,7 +96,9 @@ let lotIds = [];
         auction.lots = lotIds;
       await auction.save();
     }
-
+for (const email of normalizedEmails) {
+  inviteAuction(email, auction)
+}
     res.status(201).json({ message: "Auction created successfully", auction });
   } catch (err) {
     console.error(err); // <-- Also add this for error details
