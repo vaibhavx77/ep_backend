@@ -13,22 +13,22 @@ const userSchema = new mongoose.Schema({
   profile: {
     companyName: { type: String, required: function() { return this.role === "Supplier"; } },
     registrationNumber: { type: String, required: function() { return this.role === "Supplier"; } },
-    taxId: { type: String, required: function() { return this.role === "Supplier"; } },
-    address: { type: String, required: function() { return this.role === "Supplier"; } },
-    coreCapabilities: { type: String, required: function() { return this.role === "Supplier"; } },
+    // taxId: { type: String, required: function() { return this.role === "Supplier"; } },
+    country: { type: String, required: function() { return this.role === "Supplier"; } },
+    // coreCapabilities: { type: String, required: function() { return this.role === "Supplier"; } },
     portOfLoading: { type: String, required: function() { return this.role === "Supplier"; } },
-    containerCapacity: { type: Number, required: function() { return this.role === "Supplier"; } },
-    importDutiesInfo: { type: String, required: function() { return this.role === "Supplier"; } },
+    // containerCapacity: { type: Number, required: function() { return this.role === "Supplier"; } },
+    // importDutiesInfo: { type: String, required: function() { return this.role === "Supplier"; } },
     // ...add more as needed...
   },
-  businessDocs: [{
-    type: String, // file path or URL
-    required: function() { return this.role === "Supplier"; }
-  }],
+  // businessDocs: [{
+  //   type: String, // file path or URL
+  //   required: function() { return this.role === "Supplier"; }
+  // }],
   createdAt: { type: Date, default: Date.now },
   otpCode: { type: String },
   otpExpires: { type: Date },
-  agreedToTerms: { type: Boolean, required: function() { return this.role === "Supplier"; } },
+  // agreedToTerms: { type: Boolean, required: function() { return this.role === "Supplier"; } },
 });
 
 export default mongoose.model("User", userSchema);

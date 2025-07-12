@@ -3,7 +3,7 @@ import Lot from "../models/lot.js";
 import User from "../models/user.js";
 import Bid from "../models/bid.js";
 import { getAgendaInstance } from '../agenda.js'
-import { inviteAuction } from "../utils/mailer.js";
+import { inviteAuction, sendRegistrationInvite } from "../utils/mailer.js";
 
 // Create Auction (with optional lots)
 export const createAuction = async (req, res) => {
@@ -58,15 +58,27 @@ console.log(invitedSuppliers, "iiiiiiiiiiiiiiiiiii")
 console.log(auction, auction._id, "vvvvvvvvvvvvvvvvvvvvvv11111111")
 const normalizedEmails = invitedSuppliers.map(email => email.toLowerCase());
     // Validate invited suppliers
-    if (invitedSuppliers && invitedSuppliers.length > 0) {
-      const validSuppliers = await User.find({
+    // if (invitedSuppliers && invitedSuppliers.length > 0) {
+      const existingUsers = await User.find({
         email: { $in: normalizedEmails },
         // role: "Supplier"
       }).select("_id");
       // if (validSuppliers.length !== invitedSuppliers.length) {
       //   return res.status(400).json({ message: "One or more invited users are not valid suppliers." });
       // }
-    }
+    // }
+    // Extract existing emails from DB results
+const existingEmails = existingUsers.map(user => user.email.toLowerCase());
+
+// Determine which emails are *not* in DB
+const newEmails = normalizedEmails.filter(email => !existingEmails.includes(email));
+
+// Optionally validate existing users further (e.g., check if role is 'Supplier')
+// const validSuppliers = existingUsers.filter(user => user.role === 'Supplier');
+
+console.log("Existing Users:", existingEmails);
+console.log("New Users to Invite:", newEmails);
+
 let lotIds = [];
     // Handle lots (if any)
     if (lots && lots.length > 0) {
@@ -96,8 +108,12 @@ let lotIds = [];
         auction.lots = lotIds;
       await auction.save();
     }
-for (const email of normalizedEmails) {
-  inviteAuction(email, auction)
+    // Send invite to users not in DB
+for (const email of newEmails) {
+    await sendRegistrationInvite(email); // <-- Implement this function
+}
+for (const email of existingEmails) {
+ await  inviteAuction(email, auction)
 }
     res.status(201).json({ message: "Auction created successfully", auction });
   } catch (err) {
@@ -107,31 +123,95 @@ for (const email of normalizedEmails) {
 };
 
 // List all auctions (EP members: all, Suppliers: only invited & active)
+// export const listAuctions = async (req, res) => {
+//   try {
+//     console.log(req.user.userId, "req.user.userId")
+//     let auctions;
+//     if (["Admin", "Manager", "Viewer"].includes(req.user.role)) {
+//       auctions = await Auction.find().populate("lots invitedSuppliers createdBy");
+//     } else if (req.user.role === "Supplier") {
+//       auctions = await Auction.find({
+//         invitedSuppliers: req.user.userId,
+//         status: { $in: ["Active", "Scheduled"] }
+//       }).populate("lots invitedSuppliers createdBy");
+//     // const  auctions = await Auction.find({
+//     //     status: { $in: ["Active", "Scheduled"] }
+//     //   }).populate("lots invitedSuppliers createdBy");
+//     // } else {
+//     //   return res.status(403).json({ message: "Access denied" });
+//     // }
+//     } else{
+//       return res.status(403).json({ message: "Access denied" });
+//     }
+//     res.json(auctions);
+//   } catch (err) {
+//     res.status(500).json({ message: "Failed to fetch auctions", error: err.message });
+//   }
+// };
 export const listAuctions = async (req, res) => {
   try {
-    console.log(req.user.userId, "req.user.userId")
+    console.log(req.user.userId, "req.user.userId");
     let auctions;
+
+    // Fetch auctions based on user role
     if (["Admin", "Manager", "Viewer"].includes(req.user.role)) {
       auctions = await Auction.find().populate("lots invitedSuppliers createdBy");
-    } else if (req.user.role === "Supplier") {
+
+      // Add noOfLots to each auction
+      // const enrichedAuctions = auctions.map(auction => {
+      //   const auctionObj = auction.toObject();
+      //   auctionObj.noOfLots = auction.lots ? auction.lots.length : 0;
+      //   return auctionObj;
+      // });
+
+      return res.json(auctions);
+    }
+
+    // Supplier-specific logic
+    else if (req.user.role === "Supplier") {
       auctions = await Auction.find({
         invitedSuppliers: req.user.userId,
         status: { $in: ["Active", "Scheduled"] }
       }).populate("lots invitedSuppliers createdBy");
-    // const  auctions = await Auction.find({
-    //     status: { $in: ["Active", "Scheduled"] }
-    //   }).populate("lots invitedSuppliers createdBy");
-    // } else {
-    //   return res.status(403).json({ message: "Access denied" });
-    // }
-    } else{
+
+      const now = new Date();
+      const upcoming = [];
+      const live = [];
+       const paused = [];
+      const ended = [];
+
+      for (const auction of auctions) {
+        const auctionObj = auction.toObject();
+        auctionObj.noOfLots = auction.lots ? auction.lots.length : 0;
+
+        const start = new Date(auction.startTime);
+        const end = new Date(auction.endTime);
+
+        if (auction.status === "Paused") {
+          paused.push(auctionObj);
+        } else if (start > now) {
+          upcoming.push(auctionObj);
+        } else if (start <= now && end >= now) {
+          live.push(auctionObj);
+        } else {
+          ended.push(auctionObj);
+        }
+      }
+
+      return res.json({ upcoming, live, ended });
+    }
+
+    // Default deny
+    else {
       return res.status(403).json({ message: "Access denied" });
     }
-    res.json(auctions);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Failed to fetch auctions", error: err.message });
   }
 };
+
+
 
 // Get auction details by ID
 export const getAuctionDetails = async (req, res) => {

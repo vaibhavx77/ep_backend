@@ -19,12 +19,35 @@ export const sendOTP = async (to, otp) => {
   });
 };
 
+// export const inviteAuction = async (to, auction) => {
+//   await transporter.sendMail({
+//     from: process.env.EMAIL_USER,
+//     to,
+//     subject: "Auction Invite",
+//     text: `Your are invited to an auction ${auction?.title}`,
+//   });
+// };
 export const inviteAuction = async (to, auction) => {
+  const loginUrl = `https://epauction.vercel.app/auth/login`;
+
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to,
     subject: "Auction Invite",
-    text: `Your are invited to an auction ${auction?.title}`,
+    text: `You are invited to an auction: ${auction?.title}\nPlease log in to participate: ${loginUrl}`,
+    html: `
+      <p>You are invited to an auction: <strong>${auction?.title}</strong></p>
+      <p>Please <a href="${loginUrl}">click here</a> to log in and join the auction.</p>
+    `,
+  });
+};
+
+export const sendRegistrationInvite = async (email) => {
+  // Example: enqueue email or use your email service
+  await emailService.send({
+    to: email,
+    subject: "You're Invited to an Auction",
+    html: `You’ve been invited to participate in an auction. Register here: <a href="https://epauction.vercel.app/supplier/dashboard">Register</a>`,
   });
 };
 

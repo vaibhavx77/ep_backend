@@ -1,4 +1,5 @@
 import User from "../models/user.js";
+import { v4 as uuidv4 } from 'uuid';
 import Auction from "../models/auction.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -7,9 +8,78 @@ import Invitation from "../models/invitation.js";
 import { convertEmailToUserIdInAuctions } from "../utils/auctionUtils.js";
 
 // Register a new user (EP member or Supplier)
+// export const register = async (req, res) => {
+//   try {
+//     const { name, email, password, role, profile, businessDocs, invitationToken, agreedToTerms } = req.body;
+
+//     // Only allow "Supplier" role for public registration
+//     if (role && role !== "Supplier") {
+//       return res.status(403).json({ message: "Only Supplier registration is allowed here." });
+//     }
+
+//     // Validate invitation token
+//     const invitation = await Invitation.findOne({ email, token: invitationToken, used: false });
+//     if (!invitation) {
+//       return res.status(400).json({ message: "Invalid or expired invitation token." });
+//     }
+
+//     // Check required supplier fields
+//     const requiredFields = [
+//       "companyName", "registrationNumber", "taxId", "address", "coreCapabilities",
+//       "portOfLoading", "containerCapacity", "importDutiesInfo"
+//     ];
+//     for (const field of requiredFields) {
+//       if (!profile || !profile[field]) {
+//         return res.status(400).json({ message: `Missing required field: ${field}` });
+//       }
+//     }
+//     if (!businessDocs || businessDocs.length < 2) {
+//       return res.status(400).json({ message: "Business registration and tax documents are required." });
+//     }
+//     if (!agreedToTerms) {
+//       return res.status(400).json({ message: "You must agree to the terms to register." });
+//     }
+
+//     // Check if user already exists
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) return res.status(400).json({ message: "User already exists" });
+
+//     // Hash password
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     // Create user
+//     const user = new User({
+//       name,
+//       email,
+//       password: hashedPassword,
+//       role: "Supplier",
+//       profile,
+//       businessDocs,
+//       agreedToTerms,
+//     });
+
+//     await user.save();
+
+//     // Mark invitation as used
+//     invitation.used = true;
+//     invitation.usedAt = new Date();
+//     await invitation.save();
+
+//     // Update auctions that have this email in invitedSuppliers
+//     // Convert email to user ID in all relevant auctions
+//     const auctionsUpdated = await convertEmailToUserIdInAuctions(email, user._id);
+
+//     res.status(201).json({ 
+//       message: "Registration successful",
+//       auctionsUpdated
+//     });
+//   } catch (err) {
+//     res.status(500).json({ message: "Registration failed", error: err.message });
+//   }
+// };
 export const register = async (req, res) => {
   try {
-    const { name, email, password, role, profile, businessDocs, invitationToken, agreedToTerms } = req.body;
+    const { name, email, password, role, profile } = req.body;
 
     // Only allow "Supplier" role for public registration
     if (role && role !== "Supplier") {
@@ -17,27 +87,31 @@ export const register = async (req, res) => {
     }
 
     // Validate invitation token
-    const invitation = await Invitation.findOne({ email, token: invitationToken, used: false });
-    if (!invitation) {
-      return res.status(400).json({ message: "Invalid or expired invitation token." });
-    }
+    // const invitation = await Invitation.findOne({ email, token: invitationToken, used: false });
+    // if (!invitation) {
+    //   return res.status(400).json({ message: "Invalid or expired invitation token." });
+    // }
 
     // Check required supplier fields
-    const requiredFields = [
-      "companyName", "registrationNumber", "taxId", "address", "coreCapabilities",
-      "portOfLoading", "containerCapacity", "importDutiesInfo"
+    // const requiredFields = [
+    //   "companyName", "registrationNumber", "taxId", "address", "coreCapabilities",
+    //   "portOfLoading", "containerCapacity", "importDutiesInfo"
+    // ];
+      const requiredFields = [
+      "companyName", "country",
+      "portOfLoading"
     ];
     for (const field of requiredFields) {
       if (!profile || !profile[field]) {
         return res.status(400).json({ message: `Missing required field: ${field}` });
       }
     }
-    if (!businessDocs || businessDocs.length < 2) {
-      return res.status(400).json({ message: "Business registration and tax documents are required." });
-    }
-    if (!agreedToTerms) {
-      return res.status(400).json({ message: "You must agree to the terms to register." });
-    }
+    // if (!businessDocs || businessDocs.length < 2) {
+    //   return res.status(400).json({ message: "Business registration and tax documents are required." });
+    // }
+    // if (!agreedToTerms) {
+    //   return res.status(400).json({ message: "You must agree to the terms to register." });
+    // }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -45,6 +119,13 @@ export const register = async (req, res) => {
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+    let updatedProfile = { ...profile };
+    if (role === "Supplier") {
+      const shortId = uuidv4().split('-')[0]; // short unique suffix
+      const today = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // e.g., 20250712
+      const registrationNumber = `SUP-${today}-${shortId}`;
+      updatedProfile.registrationNumber = registrationNumber;
+    }
 
     // Create user
     const user = new User({
@@ -52,17 +133,17 @@ export const register = async (req, res) => {
       email,
       password: hashedPassword,
       role: "Supplier",
-      profile,
-      businessDocs,
-      agreedToTerms,
+      profile: updatedProfile
+      // businessDocs,
+      // agreedToTerms,
     });
 
     await user.save();
 
     // Mark invitation as used
-    invitation.used = true;
-    invitation.usedAt = new Date();
-    await invitation.save();
+    // invitation.used = true;
+    // invitation.usedAt = new Date();
+    // await invitation.save();
 
     // Update auctions that have this email in invitedSuppliers
     // Convert email to user ID in all relevant auctions
