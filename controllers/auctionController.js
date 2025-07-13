@@ -56,20 +56,20 @@ await agenda.schedule(new Date(startTime), 'start auction', { auctionId: auction
 await agenda.schedule(new Date(endTime), 'end auction', { auctionId: auction._id });
 console.log(invitedSuppliers, "iiiiiiiiiiiiiiiiiii")
 console.log(auction, auction._id, "vvvvvvvvvvvvvvvvvvvvvv11111111")
-const normalizedEmails = invitedSuppliers.map(email => email.toLowerCase());
+const normalizedEmails = invitedSuppliers.map(email => email);
     // Validate invited suppliers
     // if (invitedSuppliers && invitedSuppliers.length > 0) {
       const existingUsers = await User.find({
         email: { $in: normalizedEmails },
         // role: "Supplier"
-      }).select("_id");
+      });
       // if (validSuppliers.length !== invitedSuppliers.length) {
       //   return res.status(400).json({ message: "One or more invited users are not valid suppliers." });
       // }
     // }
     // Extract existing emails from DB results
-const existingEmails = existingUsers.map(user => user.email.toLowerCase());
-
+const existingEmails = existingUsers.map(user => user.email);
+console.log(existingUsers, "existingUsers")
 // Determine which emails are *not* in DB
 const newEmails = normalizedEmails.filter(email => !existingEmails.includes(email));
 
@@ -108,6 +108,10 @@ let lotIds = [];
         auction.lots = lotIds;
       await auction.save();
     }
+
+    console.log(newEmails, "newEmails")
+    console.log(existingEmails, "existingEmails")
+
     // Send invite to users not in DB
 for (const email of newEmails) {
     await sendRegistrationInvite(email); // <-- Implement this function
