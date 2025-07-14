@@ -5,6 +5,7 @@ const lotSchema = new mongoose.Schema({
   lotId: { type: String, required: true },
   name: { type: String, required: true },
   material: {type: String, required: true},
+  volume: {type: String, required: true},
   prevCost: {type: String, required: true},
   hsCode: {type: String, required: true},
  dimensions: { type: Object } 

@@ -1,4 +1,5 @@
 import User from "../models/user.js";
+import Otp from '../models/otp.js';
 import { v4 as uuidv4 } from 'uuid';
 import Auction from "../models/auction.js";
 import bcrypt from "bcryptjs";
@@ -166,50 +167,113 @@ export const login = async (req, res) => {
     if (!user) return res.status(400).json({ message: "Invalid credentials" });
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+    console.log(isMatch, "ppppppppppppppppppp")
 
-    // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    user.otpCode = otp;
-    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-    await user.save();
+   const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins from now
 
+    // Check if OTP record exists for this email
+    const existingOtp = await Otp.findOne({ email });
+
+    if (existingOtp) {
+      // Update existing OTP
+      existingOtp.otpCode = otpCode;
+      existingOtp.expiresAt = expiresAt;
+      await existingOtp.save();
+    } else {
+      // Create new OTP record
+      await Otp.create({ email, otpCode, expiresAt });
+    }
     // Send OTP via email
-     await sendOTP(user.email, otp);
+     await sendOTP(user.email, otpCode);
     res.json({ message: "OTP sent to your email" });
   } catch (err) {
+    console.log(err);
+    
     res.status(500).json({ message: "Login failed", error: err.message });
   }
 };
 
 // Verify OTP (Step 2: OTP check, issue JWT)
+// export const verifyOtp = async (req, res) => {
+//   try {
+//     const { email, otp } = req.body;
+//     const user = await User.findOne({ email });
+//     if (
+//       !user ||
+//       user.otpCode !== otp ||
+//       !user.otpExpires ||
+//       user.otpExpires < Date.now()
+//     ) {
+//       return res.status(400).json({ message: "Invalid or expired OTP" });
+//     }
+
+//     // Clear OTP fields
+//     user.otpCode = undefined;
+//     user.otpExpires = undefined;
+//     await user.save();
+
+//     // Generate JWT
+//     const token = jwt.sign(
+//       { userId: user._id, role: user.role },
+//       process.env.JWT_SECRET,
+//       { expiresIn: "1d" }
+//     );
+
+//     res.json({ token, user: { id: user._id, name: user.name, role: user.role, email: user.email } });
+//   } catch (err) {
+//     res.status(500).json({ message: "OTP verification failed", error: err.message });
+//   }
+// };
+
+
 export const verifyOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
-    const user = await User.findOne({ email });
-    if (
-      !user ||
-      user.otpCode !== otp ||
-      !user.otpExpires ||
-      user.otpExpires < Date.now()
-    ) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
+
+    // 1. Find OTP record
+    const otpRecord = await Otp.findOne({ email, otpCode: otp });
+
+    if (!otpRecord) {
+      return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    // Clear OTP fields
-    user.otpCode = undefined;
-    user.otpExpires = undefined;
-    await user.save();
+    if (otpRecord.expiresAt < new Date()) {
+      await Otp.deleteOne({ _id: otpRecord._id }); // Optional: cleanup expired
+      return res.status(400).json({ message: "OTP has expired" });
+    }
 
-    // Generate JWT
+    // 2. Find the user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    // 3. Delete the OTP record (prevent reuse)
+    await Otp.deleteOne({ _id: otpRecord._id });
+
+    // 4. Issue JWT
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    res.json({ token, user: { id: user._id, name: user.name, role: user.role, email: user.email } });
+    return res.json({
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        role: user.role,
+        email: user.email
+      }
+    });
   } catch (err) {
-    res.status(500).json({ message: "OTP verification failed", error: err.message });
+    console.error("OTP Verification Error:", err);
+    res.status(500).json({
+      message: "OTP verification failed",
+      error: err.message
+    });
   }
 };
 
@@ -255,11 +319,20 @@ export const forgotPassword = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "User not found" });
 
-    // Generate OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    user.otpCode = otp;
-    user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-    await user.save();
+    // 2. Generate OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // 3. Check for existing OTP and update or create new one
+    const existingOtp = await Otp.findOne({ email });
+
+    if (existingOtp) {
+      existingOtp.otpCode = otpCode;
+      existingOtp.expiresAt = expiresAt;
+      await existingOtp.save();
+    } else {
+      await Otp.create({ email, otpCode, expiresAt });
+    }
 
     // Send OTP
     await sendOTP(user.email, otp);
@@ -275,46 +348,52 @@ export const verifyForgotOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
-    const user = await User.findOne({ email });
-    if (
-      !user ||
-      user.otpCode !== otp ||
-      !user.otpExpires ||
-      user.otpExpires < Date.now()
-    ) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
+    // 1. Find matching OTP record
+    const otpRecord = await Otp.findOne({ email, otpCode: otp });
+    if (!otpRecord) {
+      return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    res.json({ message: "OTP verified. You may now reset your password." });
+    // 2. Check expiration
+    if (otpRecord.expiresAt < new Date()) {
+      await Otp.deleteOne({ _id: otpRecord._id }); // Optional cleanup
+      return res.status(400).json({ message: "OTP has expired" });
+    }
+
+    // 3. Optionally delete OTP to prevent reuse
+    await Otp.deleteOne({ _id: otpRecord._id });
+
+    // 4. Confirm OTP is valid and proceed
+    return res.json({ message: "OTP verified. You may now reset your password." });
+
   } catch (err) {
-    res.status(500).json({ message: "OTP verification failed", error: err.message });
+    console.error("OTP Verification Failed:", err);
+    return res.status(500).json({ message: "OTP verification failed", error: err.message });
   }
 };
 
 // Step 3: Reset password after OTP verification
 export const resetPassword = async (req, res) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    const { email, newPassword } = req.body;
 
+    // 1. Check if user exists
     const user = await User.findOne({ email });
-    // if (
-    //   !user ||
-    //   user.otpCode !== otp ||
-    //   !user.otpExpires ||
-    //   user.otpExpires < Date.now()
-    // ) {
-    //   return res.status(400).json({ message: "Invalid or expired OTP" });
-    // }
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
 
+    // 2. Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
-    user.otpCode = undefined;
-    user.otpExpires = undefined;
 
+    // 3. Save user
     await user.save();
 
-    res.json({ message: "Password reset successful" });
+    // 4. Respond
+    return res.json({ message: "Password reset successful" });
   } catch (err) {
-    res.status(500).json({ message: "Password reset failed", error: err.message });
+    console.error("Password reset failed:", err);
+    return res.status(500).json({ message: "Password reset failed", error: err.message });
   }
 };

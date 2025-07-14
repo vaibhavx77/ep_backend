@@ -1,5 +1,6 @@
 import Auction from "../models/auction.js";
 import Lot from "../models/lot.js";
+import mongoose from 'mongoose';
 import User from "../models/user.js";
 import Bid from "../models/bid.js";
 import { getAgendaInstance } from '../agenda.js'
@@ -27,10 +28,13 @@ export const createAuction = async (req, res) => {
 
     // Handle auction-level documents
     const documents = req.files?.auctionDocs?.map(file => file.path) || [];
-
+    const currentYear = new Date().getFullYear();
+    const uniqueThreeDigitNumber = Math.floor(Math.random() * 900) + 100;
+    const auctionId = `AUC-${currentYear}-CC-${uniqueThreeDigitNumber}`
     // Create auction
     const auction = new Auction({
       title,
+      auctionId,
       description,
       category,
       reservePrice,
@@ -90,6 +94,7 @@ let lotIds = [];
         const newLot = new Lot({
           auction: auction._id,
           lotId: lot.lotId,
+          volume: lot.volume,
           name: lot.productName,
           hsCode: lot.hsCode,
           material: lot.material,
@@ -154,7 +159,7 @@ for (const email of existingEmails) {
 // };
 export const listAuctions = async (req, res) => {
   try {
-    console.log(req.user.userId, "req.user.userId");
+    console.log(req.user, "req.user.userId");
     let auctions;
 
     // Fetch auctions based on user role
@@ -173,10 +178,13 @@ export const listAuctions = async (req, res) => {
 
     // Supplier-specific logic
     else if (req.user.role === "Supplier") {
+      console.log("kkkkkkkkkkk");
+      const supplierId = new mongoose.Types.ObjectId(req.user.userId);
       auctions = await Auction.find({
-        invitedSuppliers: req.user.userId,
-        status: { $in: ["Active", "Scheduled"] }
+        invitedSuppliers: supplierId,
+        // status: { $in: ["Active", "Scheduled"] }
       }).populate("lots invitedSuppliers createdBy");
+      console.log(auctions, "kkkkkkkkkkk1111111111");
 
       const now = new Date();
       const upcoming = [];
@@ -203,6 +211,35 @@ export const listAuctions = async (req, res) => {
       }
 
       return res.json({ upcoming, live, ended });
+    }
+
+    // Default deny
+    else {
+      return res.status(403).json({ message: "Access denied" });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch auctions", error: err.message });
+  }
+};
+
+export const listSingleAuctions = async (req, res) => {
+  try {
+    console.log("req.user.userId");
+    // Supplier-specific logic
+    if (req.user.role === "Supplier") {
+      const auctions = await Auction.find({
+        _id: req.params.id,
+        // status: { $in: ["Active", "Scheduled"] }
+      }).populate("lots invitedSuppliers createdBy");
+      console.log(auctions, "kkkkkkkkkkk1111111111");
+
+      // for (const auction of auctions) {
+      //   const auctionObj = auction.toObject();
+      //   auctionObj.noOfLots = auction.lots ? auction.lots.length : 0;
+      // }
+
+      return res.json({auctions});
     }
 
     // Default deny

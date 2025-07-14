@@ -6,6 +6,7 @@ import {
   pauseAuction,
   resumeAuction,
   getAuctionMonitoring,
+  listSingleAuctions,
 } from "../controllers/auctionController.js";
 import { authenticate, authorizeRoles } from "../middlewares/auth.js";
 import upload from "../utils/multerConfig.js";
@@ -28,7 +29,7 @@ router.post(
 
 // List auctions
 router.get("/", authenticate, listAuctions);
-
+router.get("/id", authenticate, listSingleAuctions);
 // Get auction details
 router.get("/:id", authenticate, getAuctionDetails);
 

@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 
 const auctionSchema = new mongoose.Schema({
   title: { type: String, required: true },
+  auctionId: { type: String, required: true },
+
   // description: String,
   // category: String,
   lots: [{ type: mongoose.Schema.Types.ObjectId, ref: "Lot" }],
