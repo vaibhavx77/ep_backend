@@ -52,7 +52,7 @@ export const sendRegistrationInvite = async (email) => {
     from: process.env.EMAIL_USER,
     to: email,
     subject: "You're Invited to an Auction",
-    html: `You’ve been invited to participate in an auction. Register here: <a href=${loginUrl}>Register</a>`,
+    html: `You’ve been invited to participate in an auction. Register here: <a href=https://epauction.vercel.app/supplier/check-email>Register</a>`,
   });
 };
 
