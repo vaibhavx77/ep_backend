@@ -10,6 +10,23 @@ export const getProfile = async (req, res) => {
   }
 };
 
+
+export const getUserByEmail = async (req, res) => {
+  try {
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.json(user);
+    }
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch user", error: err.message });
+  }
+};
+
 // Update current user's profile
 export const updateProfile = async (req, res) => {
   try {
