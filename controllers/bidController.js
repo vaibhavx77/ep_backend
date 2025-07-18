@@ -97,8 +97,14 @@ export const getAuctionRanking = async (req, res) => {
     const auction = await Auction.findById(auctionId);
     if (!auction) return res.status(404).json({ message: "Auction not found" });
 
-    // Get all active bids for this auction
-    const bids = await Bid.find({ auction: auctionId, status: "Active" });
+    let bids;
+    if (req.user.role === "Supplier") {
+      // Only return this supplier's bids
+      bids = await Bid.find({ auction: auctionId, status: "Active", supplier: req.user.userId });
+    } else {
+      // For admin/EP, return all bids
+      bids = await Bid.find({ auction: auctionId, status: "Active" });
+    }
 
     // Calculate weighted score if costParams are set
     const rankedBids = bids.map(bid => {

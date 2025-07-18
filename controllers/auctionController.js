@@ -23,14 +23,27 @@ export const createAuction = async (req, res) => {
       extensionMinutes,
       invitedSuppliers,
       costParams,
-      lots // Array of lot objects
+      lots, // Array of lot objects
+      // Remove draftedMessage
     } = req.body;
 
     // Handle auction-level documents
     const documents = req.files?.auctionDocs?.map(file => file.path) || [];
     const currentYear = new Date().getFullYear();
     const uniqueThreeDigitNumber = Math.floor(Math.random() * 900) + 100;
-    const auctionId = `AUC-${currentYear}-CC-${uniqueThreeDigitNumber}`
+    const auctionId = `AUC-${currentYear}-CC-${uniqueThreeDigitNumber}`;
+
+    // Build invitedSuppliersFinal: ObjectId for registered users, email for new ones
+    const invitedSuppliersFinal = [];
+    for (const email of invitedSuppliers) {
+      const user = await User.findOne({ email });
+      if (user) {
+        invitedSuppliersFinal.push(user._id); // Registered user: push ObjectId
+      } else {
+        invitedSuppliersFinal.push(email);    // Not registered: push email
+      }
+    }
+
     // Create auction
     const auction = new Auction({
       title,
@@ -43,7 +56,7 @@ export const createAuction = async (req, res) => {
       endTime,
       autoExtension,
       extensionMinutes,
-      invitedSuppliers,
+      invitedSuppliers: invitedSuppliersFinal,
       costParams,
       documents,
       createdBy: req.user.userId,
@@ -119,10 +132,10 @@ let lotIds = [];
 
     // Send invite to users not in DB
 for (const email of newEmails) {
-    await sendRegistrationInvite(email); // <-- Implement this function
+    // await sendRegistrationInvite(email); // Remove draftedMessage
 }
 for (const email of existingEmails) {
- await  inviteAuction(email, auction)
+//  await  inviteAuction(email, auction); // Remove draftedMessage
 }
     res.status(201).json({ message: "Auction created successfully", auction });
   } catch (err) {
@@ -157,15 +170,15 @@ for (const email of existingEmails) {
 //     res.status(500).json({ message: "Failed to fetch auctions", error: err.message });
 //   }
 // };
+
 export const listAuctions = async (req, res) => {
   try {
     console.log(req.user, "req.user.userId");
     let auctions;
-
-    // Fetch auctions based on user role
+    // console.log(auctions, "auctions")
+    // Fetch auctions based on user rol
     if (["Admin", "Manager", "Viewer"].includes(req.user.role)) {
       auctions = await Auction.find().populate("lots invitedSuppliers createdBy");
-
       // Add noOfLots to each auction
       // const enrichedAuctions = auctions.map(auction => {
       //   const auctionObj = auction.toObject();
