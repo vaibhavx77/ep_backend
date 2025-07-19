@@ -400,3 +400,38 @@ export const resetPassword = async (req, res) => {
     return res.status(500).json({ message: "Password reset failed", error: err.message });
   }
 };
+
+// Resend OTP for password reset
+export const resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    // Generate new OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Update or create OTP record
+    const existingOtp = await Otp.findOne({ email });
+    if (existingOtp) {
+      existingOtp.otpCode = otpCode;
+      existingOtp.expiresAt = expiresAt;
+      await existingOtp.save();
+    } else {
+      await Otp.create({ email, otpCode, expiresAt });
+    }
+
+    // Debug log for OTP
+    console.log(`Resending OTP for password reset:`, { email, otpCode });
+
+    // Send OTP
+    await sendOTP(user.email, otpCode);
+
+    res.json({ message: "OTP resent to your email for password reset" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to resend OTP", error: err.message });
+  }
+};
