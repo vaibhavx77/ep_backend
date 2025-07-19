@@ -334,8 +334,11 @@ export const forgotPassword = async (req, res) => {
       await Otp.create({ email, otpCode, expiresAt });
     }
 
+    // Debug log for OTP
+    console.log(`Sending OTP for password reset:`, { email, otpCode });
+
     // Send OTP
-    await sendOTP(user.email, otp);
+    await sendOTP(user.email, otpCode);
 
     res.json({ message: "OTP sent to your email for password reset" });
   } catch (err) {
