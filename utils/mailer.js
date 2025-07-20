@@ -33,9 +33,11 @@ export const inviteAuction = async (to, auction, previewEmail) => {
     from: process.env.EMAIL_USER,
     to,
     subject: "Auction Invite",
-    text: previewEmail || `You are invited to an auction: ${auction?.title}\nPlease log in to participate: ${loginUrl}`,
+    text: previewEmail
+      ? `${previewEmail}\n\nLogin here: ${loginUrl}`
+      : `You are invited to an auction: ${auction?.title}\nPlease log in to participate: ${loginUrl}`,
     html: previewEmail
-      ? `<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">${previewEmail}</div>`
+      ? `<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">${previewEmail}<br><br><a href=\"${loginUrl}\">${loginUrl}</a></div>`
       : `<p>You are invited to an auction: <strong>${auction?.title}</strong></p><p>Please <a href=\"${loginUrl}\">click here</a> to log in and join the auction.</p>`,
   });
 };
