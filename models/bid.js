@@ -6,7 +6,7 @@ const bidSchema = new mongoose.Schema({
   supplier: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   amount: { type: Number, required: true },
   currency: { type: String, required: true },
-  fobCost: { type: Number, required: true },
+  fob: { type: Number, required: true },
   tax: { type: Number, required: true },
   duty: { type: Number, required: true },
   totalCost: { type: Number, required: true },

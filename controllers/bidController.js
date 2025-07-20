@@ -4,7 +4,7 @@ import Auction from "../models/auction.js";
 // Submit a new bid
 export const submitBid = async (req, res) => {
   try {
-    const { auctionId, lotId, amount, currency, fobCost, tax, duty, performanceScore } = req.body;
+    const { auctionId, lotId, amount, currency, fob, carton, tax, duty, performanceScore } = req.body;
 
     // Check if auction exists and supplier is invited
     const auction = await Auction.findById(auctionId);
@@ -26,7 +26,8 @@ export const submitBid = async (req, res) => {
       supplier: req.user.userId,
       amount,
       currency,
-      fobCost,
+      fob,
+      carton,
       tax,
       duty,
       totalCost,
@@ -100,7 +101,7 @@ export const getAuctionRanking = async (req, res) => {
     let bids;
     if (req.user.role === "Supplier") {
       // Only return this supplier's bids
-      bids = await Bid.find({ auction: auctionId, status: "Active", supplier: req.user.userId }).populate("lot supplier");
+      bids = await Bid.find({ auction: auctionId, status: "Active", supplier: req.user.userId });
     } else {
       // For admin/EP, return all bids
       bids = await Bid.find({ auction: auctionId, status: "Active" }).populate("lot supplier");
