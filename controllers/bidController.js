@@ -17,7 +17,7 @@ export const submitBid = async (req, res) => {
     }
 
     // Calculate total cost (can be expanded later)
-    const totalCost = amount + fobCost + tax + duty;
+    const totalCost = amount + fob + tax + duty;
 
     // Create bid
     const bid = new Bid({
@@ -50,7 +50,7 @@ export const submitBid = async (req, res) => {
 export const updateBid = async (req, res) => {
   try {
     const { bidId } = req.params;
-    const { amount, currency, fobCost, tax, duty, performanceScore } = req.body;
+    const { amount, currency, fob, tax, duty, performanceScore } = req.body;
 
     const bid = await Bid.findById(bidId);
     if (!bid) return res.status(404).json({ message: "Bid not found" });
@@ -64,11 +64,11 @@ export const updateBid = async (req, res) => {
     // Update fields
     bid.amount = amount;
     bid.currency = currency;
-    bid.fobCost = fobCost;
+    bid.fob = fob;
     bid.tax = tax;
     bid.duty = duty;
     bid.performanceScore = performanceScore;
-    bid.totalCost = amount + fobCost + tax + duty;
+    bid.totalCost = amount + fob + tax + duty;
     bid.updatedAt = Date.now();
 
     await bid.save();
@@ -112,7 +112,7 @@ export const getAuctionRanking = async (req, res) => {
       let score = 0;
       if (auction.costParams) {
         score += (bid.amount || 0) * (auction.costParams.priceWeight || 1);
-        score += (bid.fobCost || 0) * (auction.costParams.fobWeight || 0);
+        score += (bid.fob || 0) * (auction.costParams.fobWeight || 0);
         score += (bid.tax || 0) * (auction.costParams.taxWeight || 0);
         score += (bid.duty || 0) * (auction.costParams.dutyWeight || 0);
         score -= (bid.performanceScore || 0) * (auction.costParams.performanceWeight || 0);
