@@ -279,7 +279,9 @@ export const getAuctionDetails = async (req, res) => {
     // Suppliers can only view auctions they're invited to
     if (
        req.user.role === "Supplier" &&
-      !auction.invitedSuppliers.some(s => s._id.equals(req.user.userId))
+       !auction.invitedSuppliers.some(
+        s => typeof s === 'object' && s._id && s._id.equals(req.user.userId)
+      )
     ) {
       return res.status(403).json({ message: "Access denied" });
     }
