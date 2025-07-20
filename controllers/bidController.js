@@ -100,7 +100,7 @@ export const getAuctionRanking = async (req, res) => {
     let bids;
     if (req.user.role === "Supplier") {
       // Only return this supplier's bids
-      bids = await Bid.find({ auction: auctionId, status: "Active", supplier: req.user.userId });
+      bids = await Bid.find({ auction: auctionId, status: "Active", supplier: req.user.userId }).populate("lot supplier");;
     } else {
       // For admin/EP, return all bids
       bids = await Bid.find({ auction: auctionId, status: "Active" });
