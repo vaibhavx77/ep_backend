@@ -24,6 +24,7 @@ export const createAuction = async (req, res) => {
       invitedSuppliers,
       costParams,
       lots, // Array of lot objects
+      previewEmail, // <-- add this
       // Remove draftedMessage
     } = req.body;
 
@@ -60,6 +61,7 @@ export const createAuction = async (req, res) => {
       costParams,
       documents,
       createdBy: req.user.userId,
+      previewEmail, // <-- store it
     });
 
     await auction.save();
@@ -132,10 +134,10 @@ let lotIds = [];
 
     // Send invite to users not in DB
 for (const email of newEmails) {
-    // await sendRegistrationInvite(email); // Remove draftedMessage
+    await sendRegistrationInvite(email, previewEmail); // Pass previewEmail
 }
 for (const email of existingEmails) {
-//  await  inviteAuction(email, auction); // Remove draftedMessage
+   await inviteAuction(email, auction, previewEmail); // Pass previewEmail
 }
     res.status(201).json({ message: "Auction created successfully", auction });
   } catch (err) {

@@ -27,6 +27,7 @@ const auctionSchema = new mongoose.Schema({
   // extensionMinutes: { type: Number, default: 5 },
   status: { type: String, enum: ["Scheduled", "Active", "Paused", "Ended"], default: "Scheduled" },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  previewEmail: { type: String },
   // costParams: {
   //   priceWeight: { type: Number, default: 1 },
   //   fobWeight: { type: Number, default: 0 },

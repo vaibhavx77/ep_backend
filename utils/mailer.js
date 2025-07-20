@@ -27,32 +27,27 @@ export const sendOTP = async (to, otp) => {
 //     text: `Your are invited to an auction ${auction?.title}`,
 //   });
 // };
-export const inviteAuction = async (to, auction) => {
-  // const loginUrl = `https://epauction.vercel.app/auth/login`;
+export const inviteAuction = async (to, auction, previewEmail) => {
   const loginUrl = `https://epauction.vercel.app/supplier/check-email`;
-
-  
-
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to,
     subject: "Auction Invite",
-    text: `You are invited to an auction: ${auction?.title}\nPlease log in to participate: ${loginUrl}`,
-    html: `
-      <p>You are invited to an auction: <strong>${auction?.title}</strong></p>
-      <p>Please <a href="${loginUrl}">click here</a> to log in and join the auction.</p>
-    `,
+    text: previewEmail || `You are invited to an auction: ${auction?.title}\nPlease log in to participate: ${loginUrl}`,
+    html: previewEmail
+      ? `<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">${previewEmail}</div>`
+      : `<p>You are invited to an auction: <strong>${auction?.title}</strong></p><p>Please <a href=\"${loginUrl}\">click here</a> to log in and join the auction.</p>`,
   });
 };
 
-export const sendRegistrationInvite = async (email) => {
-  // https://epauction.vercel.app/supplier/dashboard"
-  // Example: enqueue email or use your email service
- await transporter.sendMail({
+export const sendRegistrationInvite = async (email, previewEmail) => {
+  await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to: email,
     subject: "You're Invited to an Auction",
-    html: `You’ve been invited to participate in an auction. Register here: <a href=https://epauction.vercel.app/supplier/check-email>Register</a>`,
+    html: previewEmail
+      ? `<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">${previewEmail}</div>`
+      : `You’ve been invited to participate in an auction. Register here: <a href=https://epauction.vercel.app/supplier/check-email>Register</a>`,
   });
 };
 
