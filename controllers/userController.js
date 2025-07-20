@@ -27,6 +27,19 @@ export const getUserByEmail = async (req, res) => {
   }
 };
 
+
+export const getAllSupplier = async (req, res) => {
+  try {
+    const user = await User.find({ role: "Supplier" });
+    if (user.length === 0) {
+      return res.json(user);
+    }
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch Supplier", error: err.message });
+  }
+};
+
 // Update current user's profile
 export const updateProfile = async (req, res) => {
   try {
