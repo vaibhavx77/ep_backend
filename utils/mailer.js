@@ -53,12 +53,12 @@ export const sendRegistrationInvite = async (email, previewEmail) => {
   });
 };
 
-export const sendInvitationEmail = async (to, registrationLink, auctionTitle = "an auction") => {
+export const sendInvitationEmail = async (to, registrationLink, auctionTitle = "an auction", customHtmlBody) => {
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to,
     subject: `You've been invited to participate in ${auctionTitle}`,
-    html: `
+    html: customHtmlBody || `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #333;">Auction Invitation</h2>
         <p>You have been invited to participate in <strong>${auctionTitle}</strong>.</p>

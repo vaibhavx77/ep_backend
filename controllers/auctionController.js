@@ -4,7 +4,9 @@ import mongoose from 'mongoose';
 import User from "../models/user.js";
 import Bid from "../models/bid.js";
 import { getAgendaInstance } from '../agenda.js'
-import { inviteAuction, sendRegistrationInvite } from "../utils/mailer.js";
+import { inviteAuction, sendInvitationEmail } from "../utils/mailer.js";
+import Invitation from "../models/invitation.js";
+import crypto from "crypto";
 
 // Create Auction (with optional lots)
 export const createAuction = async (req, res) => {
@@ -133,12 +135,30 @@ let lotIds = [];
     console.log(existingEmails, "existingEmails")
 
     // Send invite to users not in DB
-for (const email of newEmails) {
-    await sendRegistrationInvite(email, previewEmail); // Pass previewEmail
-}
-for (const email of existingEmails) {
-   await inviteAuction(email, auction, previewEmail); // Pass previewEmail
-}
+    for (const email of newEmails) {
+      // Check if invitation already exists for this email
+      let invitation = await Invitation.findOne({ email, used: false });
+      if (!invitation) {
+        // Generate unique token
+        const token = crypto.randomBytes(32).toString("hex");
+        invitation = new Invitation({
+          email,
+          token,
+          invitedBy: req.user.userId,
+        });
+        await invitation.save();
+      }
+      // Build registration link
+      const registrationLink = `${process.env.FRONTEND_URL || "https://epauction.vercel.app"}/supplier/check-email?token=${invitation.token}`;
+      // Compose email body
+      let htmlBody = previewEmail
+        ? `<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;\">${previewEmail}<br><br><a href=\"${registrationLink}\">Register & Join Auction</a></div>`
+        : undefined;
+      await sendInvitationEmail(email, registrationLink, auction.title, htmlBody);
+    }
+    for (const email of existingEmails) {
+      await inviteAuction(email, auction, previewEmail); // Pass previewEmail
+    }
     res.status(201).json({ message: "Auction created successfully", auction });
   } catch (err) {
     console.error(err); // <-- Also add this for error details

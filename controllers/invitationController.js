@@ -25,7 +25,7 @@ export const inviteSupplier = async (req, res) => {
     await invitation.save();
 
     // Send invitation email (implement sendInvitationEmail)
-    const registrationLink = `${process.env.FRONTEND_URL}/register?token=${token}`;
+    const registrationLink = `${process.env.FRONTEND_URL}/supplier/check-email?token=${token}`;
     await sendInvitationEmail(email, registrationLink);
 
     res.status(201).json({ message: "Invitation sent successfully." });
