@@ -108,6 +108,7 @@ export const getAuctionRanking = async (req, res) => {
     }
 
     // Calculate weighted score if costParams are set
+    /*
     const rankedBids = bids.map(bid => {
       let score = 0;
       if (auction.costParams) {
@@ -124,9 +125,18 @@ export const getAuctionRanking = async (req, res) => {
 
     // Sort by score ascending (lower is better)
     rankedBids.sort((a, b) => a.score - b.score);
+    */
+    // Sort bids by amount (ascending)
+    const sortedBids = bids.sort((a, b) => a.amount - b.amount);
+
+    // Add rank field
+    const rankedBids = sortedBids.map((bid, idx) => ({
+      ...bid.toObject(),
+      rank: idx + 1
+    }));
 
     res.json(rankedBids);
   } catch (err) {
-    res.status(500).json({ message: "Failed to get ranking", error: err.message });
+    res.status(500).json({ message: "Failed to get auction ranking", error: err.message });
   }
 };
