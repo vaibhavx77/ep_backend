@@ -60,6 +60,7 @@ export const createAuction = async (req, res) => {
       autoExtension,
       extensionMinutes,
       invitedSuppliers: invitedSuppliersFinal,
+      invitedSupplierEmail: invitedSuppliers,
       costParams,
       documents,
       createdBy: req.user.userId,
@@ -200,7 +201,7 @@ export const listAuctions = async (req, res) => {
     // console.log(auctions, "auctions")
     // Fetch auctions based on user rol
     if (["Admin", "Manager", "Viewer"].includes(req.user.role)) {
-      auctions = await Auction.find().populate("lots invitedSuppliers createdBy");
+      auctions = await Auction.find({createdBy: req.user.userId}).populate("lots invitedSuppliers createdBy");
       // Add noOfLots to each auction
       // const enrichedAuctions = auctions.map(auction => {
       //   const auctionObj = auction.toObject();

@@ -19,6 +19,13 @@ const auctionSchema = new mongoose.Schema({
       message: 'Invited supplier must be either a valid ObjectId or email address'
     }
   }],
+invitedSupplierEmail: [{
+  type: String,
+  validate: {
+    validator: (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+    message: 'Must be a valid email address'
+  }
+}],
   reservePrice: { type: Number, required: true },
   currency: { type: String, required: true },
   startTime: { type: Date, required: true },
