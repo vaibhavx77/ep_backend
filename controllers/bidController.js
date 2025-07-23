@@ -53,7 +53,7 @@ export const updateBid = async (req, res) => {
     const { amount, currency, fob, tax, duty, performanceScore } = req.body;
 
     const bid = await Bid.findById(bidId);
-    if (!bid) return res.status(404).json({ message: "Bid not found" });
+   if (!bid) return res.status(404).json({ message: "Bid not found" });
     if (!bid.supplier.equals(req.user.userId)) {
       return res.status(403).json({ message: "You can only update your own bids" });
     }
@@ -61,9 +61,24 @@ export const updateBid = async (req, res) => {
       return res.status(400).json({ message: "Bid is not active" });
     }
 
+      const auction = await Auction.findOne({_id: bid.auction});
+  if (auction?.autoExtension === true) {
+      const allActiveBids = await Bid.find({ auction: bid.auction, status: "Active", _id: { $ne: bidId } });
+
+      const allAmounts = allActiveBids.map(b => b.amount);
+      const isHighest = allAmounts.every(existingAmount => amount > existingAmount);
+
+      if (isHighest) {
+        // Extend the endTime by 5 minutes
+        const extendedTime = new Date(auction.endTime.getTime() + 5 * 60000); // 5 mins in ms
+        auction.endTime = extendedTime;
+        await auction.save();
+      }
+    }
+
     // Update fields
     bid.amount = amount;
-    bid.currency = currency;
+    bid.currency = bid.currency;
     bid.fob = fob;
     bid.tax = tax;
     bid.duty = duty;
@@ -173,9 +188,9 @@ export const getAuctionRanking = async (req, res) => {
     return {
       ...bid.toObject(),
       supplierId: bid.supplier.toString(),
-      amount: parseFloat(amountGBP.toFixed(2)),
-      fob: parseFloat(fobGBP.toFixed(2)),
-      currency: "GBP",
+      // amount: parseFloat(amountGBP.toFixed(2)),
+      // fob: parseFloat(fobGBP.toFixed(2)),
+      // currency: "GBP",
       totalForRanking: parseFloat(totalForRanking.toFixed(2))
     };
   });
