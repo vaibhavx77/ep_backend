@@ -6,6 +6,7 @@ const invitationSchema = new mongoose.Schema({
   invitedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   used: { type: Boolean, default: false },
   usedAt: { type: Date },
+  response: { type: String, enum: ["pending", "yes", "no"], default: "pending" },
   createdAt: { type: Date, default: Date.now }
 });
 
