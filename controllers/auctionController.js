@@ -135,6 +135,18 @@ let lotIds = [];
     console.log(newEmails, "newEmails")
     console.log(existingEmails, "existingEmails")
 
+    // Prepare auction details table HTML
+    const auctionDetailsHtml = `
+      <table style="width:100%; border-collapse:collapse; margin:18px 0 24px 0; font-size:15px;">
+        <tr style="background:#f0f4f8;"><th colspan="2" style="padding:10px 0; font-size:16px; color:#1AAB74; text-align:left; border-radius:6px 6px 0 0;">Auction Details</th></tr>
+        <tr><td style="padding:8px 12px; color:#555; font-weight:500;">Description</td><td style="padding:8px 12px; color:#222;">${description || '-'}</td></tr>
+        <tr style="background:#fafbfc;"><td style="padding:8px 12px; color:#555; font-weight:500;">Category</td><td style="padding:8px 12px; color:#222;">${category || '-'}</td></tr>
+        <tr><td style="padding:8px 12px; color:#555; font-weight:500;">Reserve Price</td><td style="padding:8px 12px; color:#222;">${reservePrice || '-'}</td></tr>
+        <tr style="background:#fafbfc;"><td style="padding:8px 12px; color:#555; font-weight:500;">Currency</td><td style="padding:8px 12px; color:#222;">${currency || '-'}</td></tr>
+        <tr><td style="padding:8px 12px; color:#555; font-weight:500;">Start Time</td><td style="padding:8px 12px; color:#222;">${startTime ? new Date(startTime).toLocaleString() : '-'}</td></tr>
+        <tr style="background:#fafbfc;"><td style="padding:8px 12px; color:#555; font-weight:500;">End Time</td><td style="padding:8px 12px; color:#222;">${endTime ? new Date(endTime).toLocaleString() : '-'}</td></tr>
+      </table>
+    `;
     // Send confirmation email to all suppliers (registered and new)
     for (const email of normalizedEmails) {
       // Check if invitation already exists for this email
@@ -150,7 +162,7 @@ let lotIds = [];
         await invitation.save();
       }
       // Build confirmation link (not used in email body anymore)
-      await sendAuctionConfirmationEmail(email, auction.title, null, previewEmail, invitation.token, auction._id);
+      await sendAuctionConfirmationEmail(email, auction.title, null, previewEmail, invitation.token, auction._id, auctionDetailsHtml);
     }
     res.status(201).json({ message: "Auction created successfully", auction });
   } catch (err) {

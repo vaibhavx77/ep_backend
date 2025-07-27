@@ -81,7 +81,7 @@ export const sendInvitationEmail = async (to, registrationLink, auctionTitle = "
   });
 };
 
-export const sendAuctionConfirmationEmail = async (to, auctionTitle, confirmationLink, previewEmail, token, auctionId) => {
+export const sendAuctionConfirmationEmail = async (to, auctionTitle, confirmationLink, previewEmail, token, auctionId, auctionDetailsHtml) => {
   await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to,
@@ -91,6 +91,7 @@ export const sendAuctionConfirmationEmail = async (to, auctionTitle, confirmatio
         <h2 style="color: #333;">Auction Participation Confirmation</h2>
         <p>You are invited to participate in <strong>${auctionTitle}</strong>.</p>
         ${previewEmail ? `<div style='background: #f5f5f5; border-radius: 6px; padding: 16px 18px; margin: 18px 0; color: #444;'>${previewEmail}</div>` : ''}
+        ${auctionDetailsHtml || ''}
         <p>To confirm your participation, please click the button below:</p>
         <form action="${process.env.BACKEND_URL || 'http://localhost:5001'}/api/invitation/respond" method="POST" style="text-align: center; margin: 30px 0;">
           <input type="hidden" name="token" value="${token}" />
