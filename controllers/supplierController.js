@@ -28,6 +28,9 @@ export const updateProfile = async (req, res) => {
 export const getAllSuppliers = async (req, res) => {
   try {
     const suppliers = await User.find({ role: "Supplier" });
+      suppliers.sort((a, b) =>
+      a.email.localeCompare(b.email, undefined, { numeric: true, sensitivity: "base" })
+    );
     res.json(suppliers);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch suppliers", error: err.message });

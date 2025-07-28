@@ -206,7 +206,6 @@ export const getAuctionRanking = async (req, res) => {
 
   // Filter out only current supplier's bids
   const supplierBids = rankedBids.filter(bid => bid.supplierId === req.user.userId);
-
   return res.json(supplierBids);
     } else {
       // For admin/EP, return all bids

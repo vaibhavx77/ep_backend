@@ -185,7 +185,7 @@ export const login = async (req, res) => {
       await Otp.create({ email, otpCode, expiresAt });
     }
     // Send OTP via email
-     await sendOTP(user.email, otpCode);
+    await sendOTP(user.email, otpCode);
     res.json({ message: "OTP sent to your email" });
   } catch (err) {
     console.log(err);

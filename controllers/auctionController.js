@@ -17,6 +17,7 @@ export const createAuction = async (req, res) => {
       title,
       description,
       category,
+      sapCodes,
       reservePrice,
       currency,
       startTime,
@@ -52,6 +53,7 @@ export const createAuction = async (req, res) => {
       title,
       auctionId,
       description,
+      sapCodes,
       category,
       reservePrice,
       currency,
@@ -274,6 +276,7 @@ export const listSingleAuctions = async (req, res) => {
       }).populate("lots invitedSuppliers createdBy");
       console.log(auctions, "kkkkkkkkkkk1111111111");
 
+
       // for (const auction of auctions) {
       //   const auctionObj = auction.toObject();
       //   auctionObj.noOfLots = auction.lots ? auction.lots.length : 0;
@@ -309,6 +312,16 @@ export const getAuctionDetails = async (req, res) => {
       )
     ) {
       return res.status(403).json({ message: "Access denied" });
+    }
+      if (auction.lots && Array.isArray(auction.lots)) {
+      auction.lots.sort((a, b) => {
+        const idA = a.lotId || "";
+        const idB = b.lotId || "";
+        return idA.localeCompare(idB, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
+      });
     }
 
     res.json(auction);

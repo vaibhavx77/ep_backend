@@ -90,6 +90,9 @@ export const deleteProductOrCountryWithDuties = async (req, res) => {
 export const getAllProducts = async (req, res) => {
   try {
     const products = await Product.find();
+      products.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" })
+    );
     res.json(products);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch products", error: err.message });

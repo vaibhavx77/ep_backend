@@ -26,6 +26,7 @@ invitedSupplierEmail: [{
     message: 'Must be a valid email address'
   }
 }],
+sapCodes: [{ type: String }],
   reservePrice: { type: Number, required: true },
   currency: { type: String, required: true },
   startTime: { type: Date, required: true },
