@@ -1,5 +1,6 @@
 import Bid from "../models/bid.js";
 import Auction from "../models/auction.js";
+import { validateBidAgainstReservePrice } from "../utils/currencyUtils.js";
 
 // Submit a new bid
 export const submitBid = async (req, res) => {
@@ -14,6 +15,28 @@ export const submitBid = async (req, res) => {
     }
     if (auction.status !== "Active") {
       return res.status(400).json({ message: "Auction is not active" });
+    }
+
+    // Validate bid amount against reserve price with currency conversion
+    try {
+      const validation = await validateBidAgainstReservePrice(
+        amount,
+        currency,
+        auction.reservePrice,
+        auction.currency
+      );
+      
+      if (!validation.isValid) {
+        return res.status(400).json({
+          message: `Your bid cannot exceed the reserve price of ${validation.convertedReservePrice.toFixed(2)} ${validation.reservePriceCurrency}.`,
+          validation
+        });
+      }
+    } catch (error) {
+      return res.status(400).json({
+        message: "Currency conversion failed during bid validation",
+        error: error.message
+      });
     }
 
     // Calculate total cost (can be expanded later)
@@ -61,7 +84,34 @@ export const updateBid = async (req, res) => {
       return res.status(400).json({ message: "Bid is not active" });
     }
 
-      const auction = await Auction.findOne({_id: bid.auction});
+    // Get auction data for reserve price validation
+    const auction = await Auction.findOne({_id: bid.auction});
+    if (!auction) {
+      return res.status(404).json({ message: "Auction not found" });
+    }
+
+    // Validate updated bid amount against reserve price with currency conversion
+    try {
+      const validation = await validateBidAgainstReservePrice(
+        amount,
+        currency,
+        auction.reservePrice,
+        auction.currency
+      );
+      
+      if (!validation.isValid) {
+        return res.status(400).json({
+          message: `Your bid cannot exceed the reserve price of ${validation.convertedReservePrice.toFixed(2)} ${validation.reservePriceCurrency}.`,
+          validation
+        });
+      }
+    } catch (error) {
+      return res.status(400).json({
+        message: "Currency conversion failed during bid validation",
+        error: error.message
+      });
+    }
+
   if (auction?.autoExtension === true) {
       const allActiveBids = await Bid.find({ auction: bid.auction, status: "Active", _id: { $ne: bidId } });
 
